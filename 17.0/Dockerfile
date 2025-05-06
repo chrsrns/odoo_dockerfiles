@@ -11,7 +11,7 @@ ARG TARGETARCH
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 
-COPY ./binaries/wkhtmlox.deb /opt/
+COPY ./binaries/wkhtmltox.deb /opt/
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
