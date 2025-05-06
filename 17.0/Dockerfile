@@ -108,36 +108,28 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/a
 # Install rtlcss (on Debian buster)
 RUN npm install -g rtlcss
 
-# Install Odoo
-ENV ODOO_VERSION 17.0
-ARG ODOO_RELEASE=20250428
-ARG ODOO_SHA=7c3973809e0cf91494cfa2e795a43378263ca6e8
-RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
-    && apt-get update \
-    && apt-get -y install --no-install-recommends ./odoo.deb \
-    && rm -rf /var/lib/apt/lists/* odoo.deb
+RUN adduser --system --home=/opt/odoo --group odoo
 
-# Copy entrypoint script and Odoo configuration file
-COPY ./entrypoint.sh /
+# Copy Odoo configuration file
 COPY ./odoo.conf /etc/odoo/
 
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
 RUN chown odoo /etc/odoo/odoo.conf \
     && mkdir -p /mnt/extra-addons \
     && chown -R odoo /mnt/extra-addons
-VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+VOLUME ["/opt/odoo", "/mnt/extra-addons", "/odoo", "/etc/odoo"]
 
 # Expose Odoo services
 EXPOSE 8069 8071 8072
 
 # Set the default config file
 ENV ODOO_RC /etc/odoo/odoo.conf
+ENV PYTHONPATH="/odoo:$PYTHONPATH"
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
 # Set default user when running the container
 USER odoo
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
+WORKDIR /odoo
+CMD ["/odoo/odoo-bin"]
